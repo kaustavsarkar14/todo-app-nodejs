@@ -2,7 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 let ejs = require("ejs");
 require("dotenv").config();
-
+const bcrypt = require('bcrypt')
+const validator = require('validator')
 // constants
 const app = express();
 const PORT = process.env.PORT || 8000;
@@ -53,7 +54,8 @@ app.post("/register", async (req, res) => {
     console.log(error);
   }
   try {
-    const userObj = new userModel(req.body);
+    const hashedPassword = await bcrypt.hash(req.body.password, Number(process.env.SALT))
+    const userObj = new userModel({...req.body,password:hashedPassword});
     await userObj.save();
     return res.send({
       status: 201,
@@ -72,7 +74,41 @@ app.post("/register", async (req, res) => {
 app.get("/login", (req, res) => {
   res.render("login");
 });
-app.post("/login", (req, res) => {
+app.post("/login", async(req, res) => {
+  const {username, password} = req.body
+  if(validator.isEmail(username)){
+    try{
+      const userWithEmail = await userModel.findOne({email:username})
+      if(userWithEmail){
+        const isMatched = await bcrypt.compare(password.toString(), userWithEmail.password)
+        if(isMatched) return res.send({data:userWithUsername})
+        else return res.send({message : "wrong password"})
+      }
+      else {
+        return res.send({status:400,message:"this email is not registered"})
+      }
+    }
+    catch(err){
+      return res.send({status:500, message:"database error"})
+    }
+  }
+  else {
+    try{
+      const userWithUsername = await userModel.findOne({username:username})
+      if(userWithUsername){
+        const isMatched = await bcrypt.compare(password.toString(), userWithUsername.password)
+        if(isMatched) return res.send({data:userWithUsername})
+        else return res.send({message : "wrong password"})
+      }
+      else {
+        return res.send({status:400,message:"no account found with the username"})
+      }
+    }
+    catch(err){
+      console.log(err)
+      return res.send({status:500, message:"database error"})
+    }
+  }
   res.send("login suceess");
 });
 
