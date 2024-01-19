@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <h1>Dashboard</h1>
+    <form action="/logout" method="POST">
+      <button>Logout</button>
+    </form>
+
+    <form action="/logout_from_all_devices" method="POST">
+      <button>Logout from all devices</button>
+    </form>
+    <input type="text" id="addTodoInput" />
+    <button id="add-btn">Add</button>
+    <div id="todosDiv"></div>
+    <script>
+      const todosDiv = document.getElementById("todosDiv");
+      const addTodoBtn = document.getElementById("add-btn");
+      const addTodoInput = document.getElementById("addTodoInput");
+      addTodoBtn.addEventListener("click", () => {
+        console.log(addTodoInput.value);
+        fetch("/create-todo", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ todo: addTodoInput.value }),
+        })
+          .then((data) => data.json())
+          .then((data) => console.log(data));
+      });
+      async function fetchTodos() {
+        const data = await fetch("/get-todo");
+        const todos = await data.json();
+        todos.forEach((todo) => {
+          const todoDiv = document.createElement("div");
+          todoDiv.innerHTML = `
+            <div id='${todo._id}' style="border:1px solid black">
+                <h2 id='todo-${todo._id}' >${todo.todoText}</h2>
+                <button onclick="deleteTodo('${todo._id}')" >Delete</button>
+                <button onclick="editTodo('${todo._id}')" >Edit</button>
+              </div>
+            `;
+          todosDiv.appendChild(todoDiv);
+        });
+      }
+      function deleteTodo(todoDivId){
+        const todoDiv = document.getElementById(todoDivId)
+        todoDiv.remove()
+        fetch("/create-todo", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ todo: addTodoInput.value }),
+        })
+          .then((data) => data.json())
+          .then((data) => console.log(data));
+      }
+      function editTodo(todoDivId){
+        const newTodo = prompt("New todo")
+        const todo = document.getElementById('todo-'+todoDivId)
+        todo.innerText = newTodo
+        fetch('/edit-todo',{
+          method:"post",
+          headers:{
+            "Content-type":"application/json"
+          },
+          body:JSON.stringify({id:todoDivId, newText:newTodo})
+        })
+        .then(data=>data.json())
+        .then(data=>console.log(data))
+        
+      }
+      fetchTodos();
+    </script>
+  </body>
+</html>
