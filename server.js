@@ -18,6 +18,7 @@ const isAuth = require("./middleware/isAuth");
 const { cleanUpAndValidate } = require("./utils/authUtils");
 const userModel = require("./models/userModel");
 const todoModel = require("./models/todoModels");
+const rateLimit = require("./middleware/rateLimit");
 // middlewares
 app.set("view engine", "ejs");
 app.use(express.json());
@@ -153,7 +154,7 @@ app.post("/logout-from-all", isAuth, async (req, res) => {
     return res.send({ status: 500, message: "database error" });
   }
 });
-app.post("/create-todo", isAuth, async (req, res) => {
+app.post("/create-todo", isAuth, rateLimit, async (req, res) => {
   const todoText = req.body.todo;
   const username = req.session.user.username;
   if (!todoText || todoText == "")
