@@ -17,10 +17,13 @@
     <input type="text" id="addTodoInput" />
     <button id="add-btn">Add</button>
     <div id="todosDiv"></div>
+    <button id="showMore">Show more</button>
     <script>
       const todosDiv = document.getElementById("todosDiv");
       const addTodoBtn = document.getElementById("add-btn");
       const addTodoInput = document.getElementById("addTodoInput");
+      const showMoreBtn = document.getElementById("showMore");
+      let PAGE = 1
       addTodoBtn.addEventListener("click", () => {
         console.log(addTodoInput.value);
         fetch("/create-todo", {
@@ -33,10 +36,10 @@
           .then((data) => data.json())
           .then((data) => console.log(data));
       });
-      async function fetchTodos() {
-        const data = await fetch("/get-todo");
+      async function fetchTodos(page, per_page) {
+        const data = await fetch(`/get-todo?page=${page}&per_page=${per_page}`);
         const todos = await data.json();
-        todos.forEach((todo) => {
+        todos.todos.forEach((todo) => {
           const todoDiv = document.createElement("div");
           todoDiv.innerHTML = `
             <div id='${todo._id}' style="border:1px solid black">
@@ -76,7 +79,11 @@
         .then(data=>console.log(data))
         
       }
-      fetchTodos();
+      fetchTodos(1,3);
+      showMoreBtn.addEventListener('click',()=>{
+        PAGE = PAGE+1
+        fetchTodos(PAGE, 3)
+      })
     </script>
   </body>
 </html>

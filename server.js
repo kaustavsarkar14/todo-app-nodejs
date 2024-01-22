@@ -35,9 +35,9 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("connected to mongodb"))
   .catch((err) => console.log(err));
-app.get('/',isAuth, (req, res)=>{
-  res.redirect('/dashboard')
-})
+app.get("/", isAuth, (req, res) => {
+  res.redirect("/dashboard");
+});
 app.get("/register", (req, res) => {
   res.render("register");
 });
@@ -120,7 +120,7 @@ app.post("/login", async (req, res) => {
   if (!isMatched) return res.send({ status: 400, message: "wrong password" });
   req.session.isAuth = true;
   req.session.user = user;
-  res.redirect("/dashboard")
+  res.redirect("/dashboard");
 });
 app.get("/dashboard", isAuth, (req, res) => {
   res.render("dashboard");
@@ -175,24 +175,43 @@ app.post("/edit-todo", isAuth, async (req, res) => {
     if (todo.username != req.session.user.username)
       res.send({ status: 400, message: "unauthorized request" });
     try {
-      const updateDoc = await todoModel.findOneAndUpdate({_id:id}, {todoText:newText})
-      return res.send({status:200, message:"todo edited", data:updateDoc})
+      const updateDoc = await todoModel.findOneAndUpdate(
+        { _id: id },
+        { todoText: newText }
+      );
+      return res.send({ status: 200, message: "todo edited", data: updateDoc });
     } catch (error) {
-      console.log(error)
+      console.log(error);
       return res.send({ status: 500, message: "database error" });
     }
   } catch (error) {
     return res.send({ status: 500, message: "database error" });
   }
 });
-app.get('/get-todo',isAuth,async (req, res)=>{
-  try {
-    const todos = await todoModel.find({username:req.session.user.username})
-    res.send(todos)
-  } catch (error) {
-    
+app.get("/get-todo", isAuth, async (req, res) => {
+  const PAGE = Number(req.query.page);
+  const PER_PAGE = Number(req.query.per_page) || 5;
+  if (PAGE) {
+    try {
+      const todos = await todoModel
+        .find({ username: req.session.user.username })
+        .sort({ createdAt: -1 })
+        .skip((PAGE - 1) * PER_PAGE)
+        .limit(PER_PAGE);
+
+      return res.send({
+        status: 200,
+        todos,
+      });
+    } catch (error) {
+      return res.send({ status: 500, message: "database error", error });
+    }
   }
-})
+  try {
+    const todos = await todoModel.find({ username: req.session.user.username });
+    res.send(todos);
+  } catch (error) {}
+});
 app.listen(PORT, () => {
   console.log("server is running on : " + PORT);
 });
